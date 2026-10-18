@@ -1,4 +1,4 @@
-# Streamlit page for torque-to-cam. Run with:  streamlit run app.py
+# Streamlit page for torque-to-cam.
 import streamlit as st
 
 from calc import Params, run
