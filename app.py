@@ -2,7 +2,7 @@
 import streamlit as st
 
 from calc import Params, run
-from plots import design_fig
+from plots import profile_fig, sim_fig
 
 st.set_page_config(page_title="Torque to cam", layout="wide")
 st.markdown("<style>.block-container{padding-top:2rem;padding-bottom:1rem}</style>", unsafe_allow_html=True) # less empty space at the top
@@ -43,12 +43,17 @@ error = p.check()
 @st.cache_data # only recalculates when an input changes
 def build(p):
     r = run(p)
-    return r, design_fig(r, p)
+    return r, sim_fig(r, p)
+
+
+@st.cache_data
+def build_profile(p, show_circles):
+    return profile_fig(run(p), p, show_circles)
 
 
 # ---------- page ----------
 st.title("Torque to cam")
-st.caption("Set the torque you want on the left. The cam profile is built from it; press Play or drag the slider to turn the cam.")
+st.caption("Set the torque you want on the left. The Cam profile tab shows how the shape is built; the Simulation tab turns it.")
 
 if error:
     st.error(error)
@@ -62,9 +67,13 @@ m2.metric("Max lift", f"{r.lift.max():.2f} mm")
 m3.metric("Max compression", f"{r.s.max():.2f} mm")
 m4.metric("Biggest cam radius", f"{r.R.max():.2f} mm")
 
-tab_design, tab_method = st.tabs(["Design", "Method"])
+tab_profile, tab_sim, tab_method = st.tabs(["Cam profile", "Simulation", "Method"])
 
-with tab_design:
+with tab_profile:
+    show = st.toggle("Show roller circles", value=True, help="One roller circle at each calculated point. The cam is the curve touching the inside of all of them.")
+    st.plotly_chart(build_profile(p, show), width="stretch", theme=None) # its own figure, so Play and Pause never touch it
+
+with tab_sim:
     st.plotly_chart(fig, width="stretch", theme=None) # theme=None keeps our own fonts and colours; Play, Pause and the slider are inside the figure
 
 with tab_method:
@@ -82,6 +91,4 @@ with tab_method:
         left, right = st.columns([1, 3], vertical_alignment="center")
         left.markdown(f"**{n}. {label}**")
         right.latex(formula)
-    st.caption("Spring compression is Realmuto Eq. 23 (the 2/k uses k in N/mm and T in N·mm). "
-               "In the cam surface step, P and A are each roller centre's distance and angle from O; "
-               "the cam in each direction φ reaches out only to the nearest roller circle, and is the base circle outside the span the rollers touch.")
+   
